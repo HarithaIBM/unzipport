@@ -1,5 +1,5 @@
 diff --git a/unix/unix.c b/unix/unix.c
-index efa97fc..8d79e4f 100644
+index efa97fc..cde9bc5 100644
 --- a/unix/unix.c
 +++ b/unix/unix.c
 @@ -30,6 +30,11 @@
@@ -77,14 +77,14 @@ index efa97fc..8d79e4f 100644
 +    uch *ef_buf = G.extra_field;
 +    unsigned eb_id;
 +    unsigned eb_len;
-+
++    memset(&G.zos_tag, 0, sizeof(G.zos_tag));
 +    while (ef_len >= EB_HEADSIZE) {
 +        eb_id = makeword(EB_ID + ef_buf);
 +        eb_len = makeword(EB_LEN + ef_buf);
 +
 +        if (eb_id == 0x737A) { /* Extra-field block with file tag info */
++            G.zos_tag.eb_id = eb_id;
 +            G.zos_tag.ft_ccsid = makeword(4 + ef_buf);
-+	    G.zos_tag.ft_sysid = makeword(6 + ef_buf);
 +            return 0;
 +        }
 +
@@ -117,7 +117,7 @@ index efa97fc..8d79e4f 100644
 +  attrib_t attr;
 +  memset(&attr, 0, sizeof(attr));
 +  attr.att_filetagchg = 1;
-+
++  
 +  /* CCSID 65535 - for binary files, 0 for untagged files*/
 +  if(uO.aflag && ((G.zos_tag.ft_ccsid != 65535 && G.zos_tag.ft_ccsid != 0) 
 +		  || (!G.zos_tag.ft_ccsid && G.pInfo->textfile)))
@@ -137,9 +137,9 @@ index efa97fc..8d79e4f 100644
 +	  __tag_new_file(fileno(G.outfile));
 +  }
 +
-+  //Tag the binary file regardless of whether it is called with the -a flag or not.
-+  // Donot tag the files as binary if its zipped on z/OS 
-+  if(!G.zos_tag.ft_ccsid && !G.pInfo->textfile && (G.zos_tag.ft_sysid != 1))
++  //Tag the binary file regardless of whether it is called with the -a flag or not
++  //if it is from non-z/OS system
++  if(!G.zos_tag.ft_ccsid && !G.pInfo->textfile && (G.zos_tag.eb_id != 0x737A))
 +  {
 +	  __setfdbinary(fileno(G.outfile));
 +  }
